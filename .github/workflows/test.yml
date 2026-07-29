@@ -74,6 +74,10 @@ jobs:
           if f"## {version}" not in open("CHANGELOG.md").read():
               problems.append(f"CHANGELOG.md has no section for version {version}")
 
+          notes = f"docs/release-notes/v{version}.md"
+          if not os.path.exists(notes):
+              problems.append(f"missing user-facing release note {notes}")
+
           # every platform we ship must have a barcode budget on the phone
           pkjs = open("src/pkjs/index.js").read()
           budget = re.search(r"BARCODE_BUDGET = \{(.*?)\}", pkjs, re.S).group(1)

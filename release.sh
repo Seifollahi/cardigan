@@ -56,13 +56,22 @@ git push origin "v$VERSION" || true
 RELEASE_PBW="build/cardigan-$VERSION.pbw"
 cp "$PBW" "$RELEASE_PBW"
 
+# Prefer the hand-written, user-facing release note; fall back to the
+# changelog if this version doesn't have one yet.
+NOTES="docs/release-notes/v$VERSION.md"
+if [ ! -f "$NOTES" ]; then
+  echo "!! no $NOTES — falling back to CHANGELOG.md"
+  NOTES="CHANGELOG.md"
+fi
+
 if command -v gh >/dev/null 2>&1; then
   if gh release view "v$VERSION" >/dev/null 2>&1; then
     echo "==> updating existing release v$VERSION"
+    gh release edit "v$VERSION" --title "Cardigan $VERSION" --notes-file "$NOTES"
     gh release upload "v$VERSION" "$RELEASE_PBW" --clobber
   else
     gh release create "v$VERSION" "$RELEASE_PBW" \
-      --title "Cardigan $VERSION" --notes-file CHANGELOG.md
+      --title "Cardigan $VERSION" --notes-file "$NOTES"
   fi
   echo "==> Published: $(gh release view "v$VERSION" --json url -q .url)"
 else
