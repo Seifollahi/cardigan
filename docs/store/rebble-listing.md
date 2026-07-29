@@ -6,8 +6,8 @@
 
 - **Title:** Cardigan
 - **Category:** Tools & Utilities
-- **Website:** https://github.com/USERNAME/cardigan
-- **Source:** https://github.com/USERNAME/cardigan
+- **Website:** https://github.com/Seifollahi/cardigan
+- **Source:** https://github.com/Seifollahi/cardigan
 
 **Short description (one-liner):**
 
@@ -59,7 +59,7 @@ The store wants raw native-resolution shots — the framed marketing images in
 
 ## Before submitting
 
-- [ ] Replace USERNAME in links
+- [ ] Replace `[link]` placeholders with the live store URL once published
 - [ ] `pebble build` with final version number in package.json
 - [ ] Verify chalk in the emulator (round-display clipping) or drop chalk
 - [ ] Test sideload of the exact .pbw you upload

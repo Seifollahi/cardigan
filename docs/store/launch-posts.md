@@ -28,7 +28,7 @@
 > on your dev machine without the SDK — real phone JS under node, real C
 > under a behavioral stub, output decoded by an actual scanner library.
 >
-> Store: [Rebble store link] · Source: https://github.com/USERNAME/cardigan
+> Store: [Rebble store link] · Source: https://github.com/Seifollahi/cardigan
 >
 > Feedback very welcome, especially scanner compatibility reports from
 > different tills.
@@ -42,7 +42,7 @@
 > small screens, fully offline. All five platforms incl. emery.
 > Every release is scanner-verified in CI (zxing decodes the actual
 > framebuffer output).
-> Store: [link] · MIT source: https://github.com/USERNAME/cardigan
+> Store: [link] · MIT source: https://github.com/Seifollahi/cardigan
 
 ## Tips
 

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/USERNAME/cardigan/actions"><img src="https://img.shields.io/github/actions/workflow/status/USERNAME/cardigan/test.yml?label=tests&logo=github" alt="CI"></a>
+  <a href="https://github.com/Seifollahi/cardigan/actions"><img src="https://img.shields.io/github/actions/workflow/status/Seifollahi/cardigan/test.yml?label=tests&logo=github" alt="CI"></a>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
   <img src="https://img.shields.io/badge/platforms-aplite%20·%20basalt%20·%20chalk%20·%20diorite%20·%20emery-FF4C00" alt="platforms">
   <img src="https://img.shields.io/badge/scanner_verified-zxing--cpp-success" alt="scanner verified">
