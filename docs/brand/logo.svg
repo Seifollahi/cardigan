@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" role="img" aria-label="Cardigan — loyalty cards on your Pebble">
+  <!-- Cardigan brand mark: a loyalty card wearing a knit collar.
+       Yarn orange #FF4C00 · charcoal #17191F · cream #FBF7EF -->
+  <defs>
+    <clipPath id="card"><rect x="24" y="28" width="128" height="104" rx="14"/></clipPath>
+  </defs>
+
+  <!-- card body -->
+  <rect x="24" y="28" width="128" height="104" rx="14" fill="#FBF7EF" stroke="#17191F" stroke-width="6"/>
+
+  <g clip-path="url(#card)">
+    <!-- knit collar: two rows of yarn scallops -->
+    <rect x="24" y="28" width="128" height="34" fill="#FF4C00"/>
+    <g fill="none" stroke="#FBF7EF" stroke-width="4" stroke-linecap="round" opacity="0.9">
+      <path d="M24 44 q8 -9 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0"/>
+      <path d="M24 56 q8 -9 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0"/>
+    </g>
+    <!-- barcode -->
+    <g fill="#17191F">
+      <rect x="42" y="76" width="5" height="38"/>
+      <rect x="51" y="76" width="3" height="38"/>
+      <rect x="58" y="76" width="7" height="38"/>
+      <rect x="69" y="76" width="3" height="38"/>
+      <rect x="76" y="76" width="4" height="38"/>
+      <rect x="85" y="76" width="8" height="38"/>
+      <rect x="97" y="76" width="3" height="38"/>
+      <rect x="104" y="76" width="5" height="38"/>
+      <rect x="113" y="76" width="3" height="38"/>
+      <rect x="120" y="76" width="7" height="38"/>
+      <rect x="131" y="76" width="4" height="38"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <text x="180" y="92" font-family="Avenir Next, Segoe UI, DejaVu Sans, sans-serif"
+        font-size="56" font-weight="700" fill="#17191F" letter-spacing="-1">Cardigan</text>
+  <text x="182" y="122" font-family="Avenir Next, Segoe UI, DejaVu Sans, sans-serif"
+        font-size="20" font-weight="500" fill="#FF4C00" letter-spacing="2">THE WALLET YOU WEAR</text>
+</svg>

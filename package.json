@@ -1,0 +1,42 @@
+{
+  "name": "cardigan",
+  "author": "Mo Seifollahi",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Cardigan",
+    "uuid": "7c9e4b2a-5f31-4d8e-9a67-2b0c8d4e6f10",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": ["aplite", "basalt", "chalk", "diorite", "emery"],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "OP",
+      "INDEX",
+      "TOTAL",
+      "NAME",
+      "CODE",
+      "TYPE",
+      "COLOR",
+      "FLAGS",
+      "QRSIZE",
+      "POINTS",
+      "DATA"
+    ],
+    "resources": {
+      "media": [
+        {
+          "menuIcon": true,
+          "type": "png",
+          "name": "IMAGE_MENU_ICON",
+          "file": "images/menu_icon.png"
+        }
+      ]
+    },
+    "capabilities": ["configurable"]
+  }
+}
