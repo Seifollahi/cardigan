@@ -14,3 +14,6 @@ __pycache__/
 
 # OS noise
 .DS_Store
+
+# waf build locks
+.lock-waf_*
