@@ -3,7 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Seifollahi/cardigan/actions"><img src="https://img.shields.io/github/actions/workflow/status/Seifollahi/cardigan/test.yml?label=tests&logo=github" alt="CI"></a>
+  <a href="https://github.com/Seifollahi/cardigan/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/Seifollahi/cardigan/test.yml?label=tests&logo=github" alt="tests"></a>
+  <a href="https://github.com/Seifollahi/cardigan/actions/workflows/build-pbw.yml"><img src="https://img.shields.io/github/actions/workflow/status/Seifollahi/cardigan/build-pbw.yml?label=build&logo=github" alt="build"></a>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
   <img src="https://img.shields.io/badge/platforms-7%20—%20aplite%20to%20Round%202-FF4C00" alt="platforms">
   <img src="https://img.shields.io/badge/scanner_verified-zxing--cpp-success" alt="scanner verified">
@@ -94,15 +95,22 @@ frames to the run, so any UI change is reviewable as pixels.
 
 ## Releasing
 
+Push a version tag and CI does the rest — it installs the SDK, builds the
+`.pbw` for all seven platforms, verifies every one made it into the bundle,
+and attaches the binary to the GitHub release:
+
 ```sh
-make release            # current version
-make release V=1.1.0    # bump first
+make release V=1.1.0    # bumps, tests, builds locally, tags and publishes
 ```
 
-The `.pbw` is built locally by design: the public Pebble SDK containers are
-pinned to SDK 4.5, which predates the `flint` and `gabbro` platforms, so CI
-can only compile a legacy subset as a smoke test. CI's real job here is the
-scanner-verified suite, which needs no SDK at all.
+Or tag by hand and let CI produce the binary:
+
+```sh
+git tag v1.1.0 && git push origin v1.1.0
+```
+
+Every push also uploads a `cardigan-pbw` artifact, so any commit can be
+sideloaded without building anything locally.
 
 ## Architecture
 

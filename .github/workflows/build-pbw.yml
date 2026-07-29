@@ -1,52 +1,104 @@
-# Best-effort .pbw build in CI.
-#
-# NOTE: the public Pebble SDK containers are pinned to SDK 4.5, which
-# predates the `flint` and `gabbro` platforms. This job therefore builds a
-# LEGACY subset (aplite/basalt/chalk/diorite) purely as a compile check —
-# it is not the artifact you ship. Release binaries are built locally with
-# a current SDK via `release.sh`, which covers all seven platforms.
-#
-# Run manually from the Actions tab, or on a tag.
-name: build-pbw (legacy SDK check)
+name: build
 
 on:
-  workflow_dispatch:
   push:
-    tags: ["v*"]
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write        # needed to attach the .pbw to a release
 
 jobs:
-  legacy-build:
+  pbw:
+    name: build .pbw (all platforms)
     runs-on: ubuntu-latest
-    continue-on-error: true          # informational, never blocks a release
-    container:
-      image: rebble/pebble-sdk:latest
     steps:
       - uses: actions/checkout@v4
 
-      # SDK 4.5 asks "opt in to analytics? [y/n]" on first run and there is
-      # no TTY in CI, so it dies with EOFError. The tool honours this file.
+      # The SDK's own tool asks "opt in to analytics? [y/n]" on first run.
+      # There is no TTY in CI, so it would die with EOFError. Must exist
+      # before any pebble command.
       - name: Silence the SDK analytics prompt
         run: |
           mkdir -p "$HOME/.pebble-sdk"
           touch "$HOME/.pebble-sdk/NO_TRACKING"
 
-      - name: Restrict to platforms SDK 4.5 knows about
+      - name: Install ARM cross-compiler
         run: |
-          python3 - <<'PY'
-          import json
-          p = json.load(open("package.json"))
-          legacy = ["aplite", "basalt", "chalk", "diorite"]
-          p["pebble"]["targetPlatforms"] = legacy
-          json.dump(p, open("package.json", "w"), indent=2)
-          print("building legacy subset:", legacy)
-          PY
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-arm-none-eabi binutils-arm-none-eabi
+          arm-none-eabi-gcc --version | head -1
 
-      - name: pebble build
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # uv resolves pebble-tool's dependency tree properly; plain pip
+      # leaves several transitive imports missing.
+      - name: Install pebble-tool
+        run: |
+          uv tool install pebble-tool
+          pebble --version
+
+      - name: Cache the Pebble SDK
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pebble-sdk
+          key: pebble-sdk-${{ runner.os }}-v1
+
+      - name: Install the Pebble SDK
+        run: |
+          pebble sdk install latest || true
+          pebble --version
+
+      - name: Build
         run: pebble build
 
-      - name: Upload artifact
+      - name: Verify every target platform is in the bundle
+        run: |
+          python3 - <<'PY'
+          import glob, json, sys, zipfile
+          pbw = glob.glob("build/*.pbw")
+          if not pbw:
+              sys.exit("no .pbw produced")
+          want = set(json.load(open("package.json"))["pebble"]["targetPlatforms"])
+          names = zipfile.ZipFile(pbw[0]).namelist()
+          got = {n.split("/")[0] for n in names if n.endswith("/app.bin")}
+          # the default platform lives at the archive root
+          if "app.bin" in names:
+              got.add("(root)")
+          print("bundle:", pbw[0])
+          print("platforms found:", ", ".join(sorted(got)) or "none")
+          missing = want - got
+          if missing:
+              print("MISSING:", ", ".join(sorted(missing)))
+              sys.exit(1)
+          print("all", len(want), "target platforms present")
+          PY
+
+      - name: Upload .pbw artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cardigan-legacy-pbw
+          name: cardigan-pbw
           path: build/*.pbw
-          if-no-files-found: warn
+          retention-days: 90
+          if-no-files-found: error
+
+      # On a version tag, publish the binary straight to the release so
+      # users have something to sideload without building anything.
+      - name: Attach .pbw to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp build/*.pbw "cardigan-${VERSION}.pbw"
+          gh release upload "$GITHUB_REF_NAME" "cardigan-${VERSION}.pbw" --clobber
