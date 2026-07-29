@@ -56,78 +56,87 @@ maximum scanner contrast on e-paper.
 - **Sideload**: grab `cardigan.pbw` from [Releases](../../releases) and open it
   with the Pebble app, or `pebble install --phone <ip>`.
 
-## Build
+## Working on it
 
-Requires the [Pebble SDK](https://developer.rebble.io/sdk/) and the ARM
-toolchain (`brew install arm-none-eabi-gcc` on macOS):
+Everything runs through `make` — `make` on its own lists the targets.
 
 ```sh
-pebble build
-pebble install --emulator emery      # Pebble Time 2
-pebble emu-app-config                # card manager in your browser
+make deps        # one-time: scanner libraries for the test suite
+make test        # the whole host suite — no Pebble SDK needed
+make run         # build + launch the Pebble Time 2 emulator (needs SDK)
+make install PHONE=192.168.1.42     # sideload to a paired watch
+make release V=1.1.0                # test, build, tag, publish
 ```
 
-`build_mac.sh` does all of the above from scratch, including toolchain setup.
+Building the watchapp needs the [Pebble SDK](https://developer.rebble.io/sdk/)
+and the ARM toolchain (`brew install arm-none-eabi-gcc`); `build_mac.sh`
+installs both from scratch on a clean Mac.
+
+## Testing without a watch — or an SDK
+
+`make test` runs the entire pipeline on any machine with gcc, node and
+python:
+
+| Stage | What it proves |
+|---|---|
+| `make unit` | Code 128 output decodes back to the original text with a valid checksum; QR packs into the watch's bit layout losslessly; payloads fit the C struct limits |
+| `make lint` | every JS file parses; the C compiles clean under `-Wall -Wextra -Werror` in colour, B&W **and** round configurations |
+| `make render` | the real `card_window.c` draws into a framebuffer at 200×228, 144×168, 180×180 and 260×260, while the real `storage.c`/`comm.c` handle a real captured AppMessage stream |
+| `make scan` | **zxing-cpp decodes those rendered frames** — if a scanner couldn't read the screen, the build fails |
+
+Current status: **20 unit assertions**, **15/15 app-logic checks** (sync
+protocol, favourites carousel, action menu, reboot persistence,
+interrupted-sync self-heal) and **24/24 scanner decodes** across all four
+display geometries. CI runs this on every push and attaches the rendered
+frames to the run, so any UI change is reviewable as pixels.
+
+`docs/screenshots/all_platforms.png` shows the rasterizer's real output.
 
 ## Releasing
 
 ```sh
-bash release.sh          # test → build → tag → publish the .pbw
-bash release.sh 1.1.0    # bump the version first
+make release            # current version
+make release V=1.1.0    # bump first
 ```
 
 The `.pbw` is built locally by design: the public Pebble SDK containers are
 pinned to SDK 4.5, which predates the `flint` and `gabbro` platforms, so CI
 can only compile a legacy subset as a smoke test. CI's real job here is the
-scanner-verified test suite, which needs no SDK at all.
-
-## Testing (no SDK required)
-
-`test/` contains a host-side suite that runs the whole pipeline: the real
-phone JS executes under node, its captured AppMessage stream replays through
-the real C code, the card window renders into a framebuffer, and
-**zxing-cpp decodes the output** — if a scanner can't read it, the test fails.
-
-```sh
-NODE_PATH=test/shims node test/run_pkjs.js
-
-SRC="test/stub/pebble_stub.c test/harness.c src/c/storage.c src/c/comm.c \
-     src/c/card_window.c src/c/menu_window.c"
-FLAGS="-std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -Itest/stub -Isrc/c"
-gcc $FLAGS -DPBL_COLOR             $SRC -o test/out/harness
-gcc $FLAGS -DPBL_COLOR -DPBL_ROUND $SRC -o test/out/harness_round
-
-./test/out/harness       200 228 test/out/emery_  --logic   # Pebble Time 2
-./test/out/harness       144 168 test/out/basalt_           # 144x168 family
-./test/out/harness_round 180 180 test/out/chalk_            # Time Round
-./test/out/harness_round 260 260 test/out/gabbro_           # Round 2
-
-python3 test/scan_check.py test/out/emery_ test/out/basalt_ \
-                           test/out/chalk_ test/out/gabbro_
-```
-
-Current status: **15/15 logic checks** (sync protocol, favourites carousel,
-action menu, reboot persistence, interrupted-sync self-heal) and **24/24
-scanner decodes** across all four display geometries. CI runs this on every
-push. `docs/screenshots/all_platforms.png` shows the rasterizer's real
-output on each.
+scanner-verified suite, which needs no SDK at all.
 
 ## Architecture
 
 ```
 src/c/          watchapp: storage (persist), comm (AppMessage), menu + card windows
 src/pkjs/       phone: Code 128 & QR encoders, sync queue, data-URI settings page
-test/           behavioral SDK stub, functional harness, scanner verification
-docs/           brand assets, screenshots, store listing copy
+test/           behavioural SDK stub, functional harness, unit + scanner tests
+docs/           architecture notes, brand assets, store listing copy
 ```
 
-Sync protocol and message keys are documented in [`src/c/wallet.h`](src/c/wallet.h).
+```
+   phone (PebbleKit JS)                        watch (C)
+   ─────────────────────                       ──────────
+   card store (localStorage)
+        │  encode Code 128 → bar widths
+        │  encode QR       → packed bits
+        ▼
+   sync queue ──── AppMessage ────▶  comm.c ──▶ storage.c (persist, 240 B/card)
+   one card per message,                              │
+   ACK + retry, skipped when                          ▼
+   nothing changed                          card_window.c — integer-only
+                                            rasterizer, fits codes to the
+                                            display (round or square)
+```
+
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) explains the design decisions;
+the wire protocol and message keys live in [`src/c/wallet.h`](src/c/wallet.h).
 
 ## Contributing
 
-Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The test
-suite runs on any machine with gcc, node, and python; you don't need the SDK
-or a watch to hack on most of the app.
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[code of conduct](CODE_OF_CONDUCT.md). `make test` runs on any machine with
+gcc, node and python; you need neither the SDK nor a watch to work on most
+of the app. Privacy and reporting details are in [SECURITY.md](SECURITY.md).
 
 ## License
 

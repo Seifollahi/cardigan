@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in Cardigan doesn't work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Please never paste a real loyalty card
+        number** — describe the code instead (format and length).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: watch
+    attributes:
+      label: Watch
+      options:
+        - Pebble Time 2 (emery)
+        - Pebble Round 2 (gabbro)
+        - Pebble 2 Duo (flint)
+        - Pebble 2 (diorite)
+        - Pebble Time / Time Steel (basalt)
+        - Pebble Time Round (chalk)
+        - Pebble / Pebble Steel (aplite)
+        - Emulator only
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phone
+    attributes:
+      label: Phone
+      options: [Android, iOS, "Emulator / not applicable"]
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Cardigan version
+      placeholder: "1.0.0"
+
+  - type: textarea
+    id: code
+    attributes:
+      label: If it's a scanning problem
+      description: >
+        Code format (Code 128 or QR), how many characters, digits-only or
+        mixed, and whether the scanner was a laser till or a phone camera.
+        Do not include the actual number.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of `pebble logs` if you have it.
+      render: shell

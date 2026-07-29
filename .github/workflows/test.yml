@@ -2,50 +2,93 @@ name: tests
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# a new push to the same branch cancels the previous run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  functional:
+  test:
+    name: host suite (no SDK required)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
-      - name: Install scanner
-        run: pip install zxing-cpp pillow
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
 
-      - name: Run real phone pipeline (pkjs under node)
-        run: NODE_PATH=test/shims node test/run_pkjs.js
+      - name: Install scanner dependencies
+        run: pip install -r requirements-dev.txt
 
-      - name: Build host harness (rectangular + round)
+      # Runs unit tests (Code 128 round trip, QR packing), lints every JS
+      # and C configuration, renders all four display geometries through
+      # the real watchapp code, then decodes the output with zxing-cpp.
+      - name: make test
+        run: make test
+
+      # Rendered frames are the ground truth for any UI change — attaching
+      # them lets a reviewer see exactly what a PR did to the screen.
+      - name: Upload rendered frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-frames
+          path: test/out/*.pgm
+          retention-days: 14
+          if-no-files-found: warn
+
+  consistency:
+    name: metadata consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version, changelog and platform list agree
         run: |
-          SRC="test/stub/pebble_stub.c test/harness.c src/c/storage.c src/c/comm.c \
-               src/c/card_window.c src/c/menu_window.c"
-          FLAGS="-std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -Itest/stub -Isrc/c"
-          gcc $FLAGS -DPBL_COLOR $SRC -o test/out/harness
-          gcc $FLAGS -DPBL_COLOR -DPBL_ROUND $SRC -o test/out/harness_round
+          python3 - <<'PY'
+          import json, re, sys
 
-      - name: B&W compile check (aplite/diorite/flint path)
-        run: |
-          gcc -fsyntax-only -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter \
-            -Itest/stub -Isrc/c src/c/*.c
+          pkg = json.load(open("package.json"))
+          version = pkg["version"]
+          platforms = pkg["pebble"]["targetPlatforms"]
+          problems = []
 
-      - name: Logic + render (Pebble Time 2, 200x228)
-        run: ./test/out/harness 200 228 test/out/emery_ --logic
+          changelog = open("CHANGELOG.md").read()
+          if f"## {version}" not in changelog:
+              problems.append(f"CHANGELOG.md has no section for version {version}")
 
-      - name: Render 144x168 (basalt/diorite/flint/aplite)
-        run: ./test/out/harness 144 168 test/out/basalt_
+          # every platform we ship must have a barcode budget on the phone
+          pkjs = open("src/pkjs/index.js").read()
+          budget = re.search(r"BARCODE_BUDGET = \{(.*?)\}", pkjs, re.S).group(1)
+          for p in platforms:
+              if p not in budget:
+                  problems.append(f"{p} is in targetPlatforms but has no BARCODE_BUDGET entry")
 
-      - name: Render 180x180 round (chalk)
-        run: ./test/out/harness_round 180 180 test/out/chalk_
+          # the menu icon must exist and be declared
+          media = pkg["pebble"]["resources"]["media"]
+          if not any(m.get("menuIcon") for m in media):
+              problems.append("no menuIcon declared in package.json resources")
+          import os
+          for m in media:
+              path = os.path.join("resources", m["file"])
+              if not os.path.exists(path):
+                  problems.append(f"missing resource file {path}")
 
-      - name: Render 260x260 round (gabbro / Pebble Round 2)
-        run: ./test/out/harness_round 260 260 test/out/gabbro_
-
-      - name: Scanner verification (zxing-cpp, every display geometry)
-        run: |
-          python3 test/scan_check.py test/out/emery_ test/out/basalt_ \
-            test/out/chalk_ test/out/gabbro_
+          if problems:
+              print("\n".join("✗ " + p for p in problems))
+              sys.exit(1)
+          print(f"✓ v{version}, {len(platforms)} platforms, resources present")
+          PY

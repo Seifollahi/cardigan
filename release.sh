@@ -26,34 +26,7 @@ echo "==> Releasing Cardigan v$VERSION"
 
 # ---- 1. the same suite CI runs -------------------------------------
 echo "==> Host test suite"
-NODE_PATH=test/shims node test/run_pkjs.js >/dev/null
-mkdir -p test/out
-SRC="test/stub/pebble_stub.c test/harness.c src/c/storage.c src/c/comm.c
-     src/c/card_window.c src/c/menu_window.c"
-FLAGS="-std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -Itest/stub -Isrc/c"
-# shellcheck disable=SC2086
-gcc $FLAGS -DPBL_COLOR             $SRC -o test/out/harness
-# shellcheck disable=SC2086
-gcc $FLAGS -DPBL_COLOR -DPBL_ROUND $SRC -o test/out/harness_round
-./test/out/harness       200 228 test/out/emery_  --logic | tail -1
-./test/out/harness       144 168 test/out/basalt_ | tail -1
-./test/out/harness_round 180 180 test/out/chalk_  | tail -1
-./test/out/harness_round 260 260 test/out/gabbro_ | tail -1
-if ! python3 -c "import zxingcpp, PIL" 2>/dev/null; then
-  echo "==> Installing scanner deps (zxing-cpp, pillow)…"
-  pip3 install --quiet zxing-cpp pillow 2>/dev/null \
-    || pip3 install --quiet --break-system-packages zxing-cpp pillow 2>/dev/null \
-    || true
-fi
-if python3 -c "import zxingcpp, PIL" 2>/dev/null; then
-  python3 test/scan_check.py test/out/emery_ test/out/basalt_ \
-                             test/out/chalk_ test/out/gabbro_ | tail -1
-else
-  echo "!! scanner deps unavailable — skipping scan verification."
-  echo "   install with: pip3 install zxing-cpp pillow"
-  read -r -p "   continue the release without it? [y/N] " ans
-  [ "$ans" = "y" ] || [ "$ans" = "Y" ] || exit 1
-fi
+make test || { echo "tests failed — refusing to release"; exit 1; }
 
 # ---- 2. build the watchapp -----------------------------------------
 echo "==> pebble build"

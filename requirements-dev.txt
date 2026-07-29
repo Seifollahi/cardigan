@@ -1,0 +1,5 @@
+# Host test dependencies (no Pebble SDK needed).
+# zxing-cpp decodes the watchapp's rendered framebuffer, so a barcode that
+# a real scanner couldn't read fails the build.
+zxing-cpp>=2.2.0
+pillow>=10.0.0

@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem?
+      description: What are you trying to do that Cardigan makes hard today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like instead?
+
+  - type: markdown
+    attributes:
+      value: |
+        **Worth knowing before you write:** the watch deliberately does no
+        encoding — all barcode/QR generation happens on the phone, and one
+        card must fit in a 240-byte record. Features that need tables or
+        floating point on the watch are unlikely to land. See
+        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md).
