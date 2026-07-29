@@ -25,14 +25,25 @@
 > MANAGE FROM YOUR PHONE — add, edit, reorder and colour-code cards in the
 > Pebble app's settings page. Changes sync to the watch in about a second.
 >
-> MADE FOR EVERY PEBBLE — from the 2013 original to the Pebble Time 2.
-> Long codes rotate automatically to use the full screen; if a barcode can't
-> fit your watch's display, Cardigan switches it to a QR code by itself.
+> MADE FOR EVERY PEBBLE — all seven platforms, from the 2013 original to the
+> Pebble Time 2, Pebble 2 Duo and Pebble Round 2. Long codes rotate
+> automatically to use the full screen; on round watches codes are fitted to
+> the circle so nothing hides under the bezel; and if a barcode can't fit
+> your display at all, Cardigan switches it to a QR code by itself.
+>
+> TESTED LIKE IT MATTERS — every release is verified by decoding the watch's
+> own rendered screen with a real scanner library. A barcode that wouldn't
+> scan fails the build.
 >
 > Stores up to 12 cards on the watch. Balance display, favourites, and a
-> quick-card action menu included. Open source (MIT) on GitHub.
+> quick-card action menu included. No accounts, no network access, no
+> tracking. Open source (MIT) on GitHub.
 
 **Release notes (1.0.0):** First release — see CHANGELOG.md.
+
+**The .pbw to upload** comes from the tagged CI build: Actions → *build* →
+`cardigan-pbw` artifact, or the binary attached to the GitHub release. Don't
+upload a local development build.
 
 ## Asset checklist
 
@@ -44,7 +55,7 @@ Ready to upload — exact sizes the portal requires, in `docs/store/assets/`:
 | Large icon | 144×144 PNG | `assets/icon_large_144.png` |
 | Small icon | 48×48 PNG | `assets/icon_small_48.png` |
 
-Regenerate any of them with `python3 docs/store/make_assets.py` (requires Pillow).
+Regenerate any of them with `python3 docs/make_assets.py` (requires Pillow).
 
 ## Screenshots
 

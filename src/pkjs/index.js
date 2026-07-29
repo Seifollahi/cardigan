@@ -1,5 +1,5 @@
 /*
- * Pebble Wallet — phone companion (PebbleKit JS)
+ * Cardigan — phone companion (PebbleKit JS)
  *
  * All heavy lifting happens here, on the phone:
  *   - Code 128 encoding -> bar/space width bytes

@@ -53,9 +53,15 @@ maximum scanner contrast on e-paper.
 
 ## Install
 
-- **Rebble store**: search "Cardigan" (Tools).
-- **Sideload**: grab `cardigan.pbw` from [Releases](../../releases) and open it
-  with the Pebble app, or `pebble install --phone <ip>`.
+- **Rebble store** — search "Cardigan" under Tools.
+- **Sideload** — download `cardigan.pbw` from
+  [Releases](../../releases), share it to the Pebble app on your phone, and
+  it will offer to install. Or, with the SDK:
+  `pebble install --phone <your-phone-ip>`.
+- **Any commit** — every CI build uploads a `cardigan-pbw` artifact, so you
+  can try an unreleased change without building anything.
+
+Then open the Pebble app → Cardigan → settings (gear) to add your cards.
 
 ## Working on it
 
@@ -136,8 +142,16 @@ docs/           architecture notes, brand assets, store listing copy
                                             display (round or square)
 ```
 
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) explains the design decisions;
-the wire protocol and message keys live in [`src/c/wallet.h`](src/c/wallet.h).
+| Document | What's in it |
+|---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the watch does no encoding, how codes are fitted to round screens, how the test stub works |
+| [`src/c/wallet.h`](src/c/wallet.h) | the wire protocol, message keys and the card struct |
+| [`docs/brand/README.md`](docs/brand/README.md) | palette, the mark, why the launcher icon is a silhouette |
+| [`docs/store/rebble-listing.md`](docs/store/rebble-listing.md) | store copy, asset specs, submission checklist |
+| [`CHANGELOG.md`](CHANGELOG.md) | what changed, per release |
+
+All brand and store artwork regenerates with `make assets` — the images are
+build output, not hand-edited files.
 
 ## Contributing
 

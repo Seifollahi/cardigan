@@ -87,7 +87,7 @@ release: test ## test, build, tag and publish (make release V=1.1.0)
 	@bash release.sh $(V)
 
 assets: ## regenerate store banner and icons
-	python3 docs/store/make_assets.py
+	python3 docs/make_assets.py
 
 screens: ## guided emulator screenshot capture
 	bash docs/store/capture_screenshots.sh

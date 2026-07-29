@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pebble Wallet — build & run in the Pebble Time 2 emulator on macOS.
+# Cardigan — build & run in the Pebble Time 2 emulator on macOS.
 # Installs the Rebble pebble-tool (via uv) and the SDK on first run.
 set -euo pipefail
 
