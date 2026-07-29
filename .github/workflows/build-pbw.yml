@@ -66,22 +66,34 @@ jobs:
         run: |
           python3 - <<'PY'
           import glob, json, sys, zipfile
+
           pbw = glob.glob("build/*.pbw")
           if not pbw:
               sys.exit("no .pbw produced")
+
           want = set(json.load(open("package.json"))["pebble"]["targetPlatforms"])
           names = zipfile.ZipFile(pbw[0]).namelist()
-          got = {n.split("/")[0] for n in names if n.endswith("/app.bin")}
-          # the default platform lives at the archive root
-          if "app.bin" in names:
-              got.add("(root)")
+
+          # A .pbw is a zip with one directory per platform (aplite/,
+          # basalt/, ...) holding manifest.json + pebble-app.bin. Match on
+          # the directory rather than a binary filename, which has changed
+          # across SDK versions.
+          got = {n.split("/")[0] for n in names if "/" in n}
+
           print("bundle:", pbw[0])
-          print("platforms found:", ", ".join(sorted(got)) or "none")
+          print("archive contents:")
+          for n in sorted(names):
+              print("   ", n)
+          print("platform dirs:", ", ".join(sorted(got)) or "none")
+
           missing = want - got
+          extra = got - want
+          if extra:
+              print("note: bundle also contains", ", ".join(sorted(extra)))
           if missing:
               print("MISSING:", ", ".join(sorted(missing)))
               sys.exit(1)
-          print("all", len(want), "target platforms present")
+          print(f"all {len(want)} target platforms present")
           PY
 
       - name: Upload .pbw artifact
