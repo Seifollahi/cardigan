@@ -1,0 +1,45 @@
+# Best-effort .pbw build in CI.
+#
+# NOTE: the public Pebble SDK containers are pinned to SDK 4.5, which
+# predates the `flint` and `gabbro` platforms. This job therefore builds a
+# LEGACY subset (aplite/basalt/chalk/diorite) purely as a compile check —
+# it is not the artifact you ship. Release binaries are built locally with
+# a current SDK via `release.sh`, which covers all seven platforms.
+#
+# Run manually from the Actions tab, or on a tag.
+name: build-pbw (legacy SDK check)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  legacy-build:
+    runs-on: ubuntu-latest
+    continue-on-error: true          # informational, never blocks a release
+    container:
+      image: rebble/pebble-sdk:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restrict to platforms SDK 4.5 knows about
+        run: |
+          python3 - <<'PY'
+          import json
+          p = json.load(open("package.json"))
+          legacy = ["aplite", "basalt", "chalk", "diorite"]
+          p["pebble"]["targetPlatforms"] = legacy
+          json.dump(p, open("package.json", "w"), indent=2)
+          print("building legacy subset:", legacy)
+          PY
+
+      - name: pebble build
+        run: pebble build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cardigan-legacy-pbw
+          path: build/*.pbw
+          if-no-files-found: warn

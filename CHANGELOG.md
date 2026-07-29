@@ -16,4 +16,9 @@ First public release.
 - Smart sync: one card per AppMessage with ACK/retry; skipped entirely when
   nothing changed (no persist flash wear, no spurious vibration);
   interrupted syncs self-heal on the next connect.
-- Platforms: aplite, basalt, chalk, diorite, emery (Pebble Time 2).
+- Round-display support: codes are fitted against the circle (integer
+  sqrt, no FPU), so nothing clips on Pebble Time Round or Round 2.
+- A code that cannot fit a display is never drawn clipped — the number is
+  shown large instead, since a truncated barcode scans as a wrong number.
+- Platforms: all seven — aplite, basalt, chalk, diorite, emery
+  (Pebble Time 2), flint (Pebble 2 Duo), gabbro (Pebble Round 2).

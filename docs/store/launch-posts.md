@@ -21,8 +21,8 @@
 >   reorder, recolour, barcode or QR. Syncs in about a second.
 > - Long codes auto-rotate to use the full screen height; if your watch's
 >   display physically can't fit a barcode, it becomes a QR automatically.
-> - Fully offline, up to 12 cards on-watch, all five platforms
->   (aplite/basalt/chalk/diorite/emery).
+> - Fully offline, up to 12 cards on-watch, all seven platforms
+>   (aplite through Pebble Round 2).
 >
 > It's MIT-licensed and the repo has a fun testing story: the whole app runs
 > on your dev machine without the SDK — real phone JS under node, real C
@@ -39,7 +39,7 @@
 > Loyalty cards as scannable Code 128/QR on your Pebble. Opens straight to
 > your last-used card, Up/Down cycles favourites, cards managed from the
 > phone app settings page. Auto-rotates long codes, auto-falls-back to QR on
-> small screens, fully offline. All five platforms incl. emery.
+> small screens, fully offline. All seven platforms, incl. Pebble Time 2 and Round 2.
 > Every release is scanner-verified in CI (zxing decodes the actual
 > framebuffer output).
 > Store: [link] · MIT source: https://github.com/Seifollahi/cardigan

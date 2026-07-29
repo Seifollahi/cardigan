@@ -19,6 +19,60 @@ static ActionMenuLevel *s_menu_root;
 
 static int header_h(GRect b) { return b.size.h >= 200 ? 40 : 34; }
 
+#if defined(PBL_ROUND)
+// Integer square root (no FPU on Pebble; avoids linking libm).
+static int isqrt_i(int n) {
+  if (n <= 0) return 0;
+  int x = n, y = (x + 1) / 2;
+  while (y < x) { x = y; y = (x + n / x) / 2; }
+  return x;
+}
+#endif
+
+// On a circular display the usable width is the chord at the widest row
+// the content occupies — not the diameter. Shrink `area` to the largest
+// rectangle of the same height that clears the bezel.
+static GRect fit_round(GRect bounds, GRect area) {
+#if defined(PBL_ROUND)
+  const int r  = bounds.size.w / 2 - 3;             // 3px bezel margin
+  const int cy = bounds.size.h / 2;
+  // farthest edge of the content from the vertical centre
+  int dy = area.origin.y - cy;
+  if (dy < 0) dy = -dy;
+  int dy2 = (area.origin.y + area.size.h) - cy;
+  if (dy2 < 0) dy2 = -dy2;
+  if (dy2 > dy) dy = dy2;
+  if (dy >= r) dy = r - 1;
+
+  const int half = isqrt_i(r * r - dy * dy);
+  const int max_w = half * 2;
+  if (area.size.w > max_w) {
+    area.origin.x += (area.size.w - max_w) / 2;
+    area.size.w = max_w;
+  }
+#else
+  (void)bounds;
+#endif
+  return area;
+}
+
+// Largest code rectangle (w x h, centred on the display) that clears the
+// bezel. On round displays the diagonal is what matters: a rectangle fits
+// the circle iff (w/2)^2 + (h/2)^2 <= r^2. Returns the max width for the
+// given height, capped by the rectangular area.
+static int max_code_w(GRect bounds, GRect area, int h) {
+#if defined(PBL_ROUND)
+  const int r = bounds.size.w / 2 - 3;
+  int half_h = h / 2;
+  if (half_h >= r) return 0;
+  const int w = isqrt_i(r * r - half_h * half_h) * 2;
+  return w < area.size.w ? w : area.size.w;
+#else
+  (void)bounds; (void)h;
+  return area.size.w;
+#endif
+}
+
 static bool color_is_dark(GColor c) {
 #if defined(PBL_COLOR)
   // perceived luminance on 2-bit channels
@@ -38,47 +92,59 @@ static int barcode_units(const Card *c) {
   return units;
 }
 
-static void draw_barcode(GContext *ctx, const Card *c, GRect area) {
+// Draws the barcode at the largest scale that fits *without clipping*,
+// choosing horizontal or rotated orientation. A clipped barcode is worse
+// than none — a scanner may read a truncated number — so this returns
+// false and draws nothing when the code cannot fit the display.
+static bool draw_barcode(GContext *ctx, const Card *c, GRect area, GRect bounds) {
   const int units = barcode_units(c);
-  if (units <= 0) return;
+  if (units <= 0) return false;
 
   const int pad = 6;
-  int scale = (area.size.w - 2 * pad) / units;
-  bool rotated = false;
-  if (scale < 1) {
-    const int vscale = (area.size.h - 2 * pad) / units;
-    if (vscale >= 1) { rotated = true; scale = vscale; }
-    else scale = 1;                       // last resort: clip
-  }
-  if (scale > 3) scale = 3;               // don't waste quiet zone
+
+  // --- horizontal: bars across, thickness = a share of the area height
+  int bar_h = (area.size.h * 6) / 10;
+  if (bar_h > 72) bar_h = 72;
+  const int avail_w = max_code_w(bounds, area, bar_h) - 2 * pad;
+  int h_scale = (avail_w > 0) ? avail_w / units : 0;
+
+  // --- rotated: bars stacked, thickness = a share of the area width
+  int bar_w = (area.size.w * 7) / 10;
+  if (bar_w > 84) bar_w = 84;
+  // for the rotated case the code's length runs vertically: the circle
+  // constraint swaps, so ask for the max "width" at thickness bar_w and
+  // use it as the available length.
+  int avail_h = max_code_w(bounds, GRect(0, 0, area.size.h, 0), bar_w) - 2 * pad;
+  if (avail_h > area.size.h - 2 * pad) avail_h = area.size.h - 2 * pad;
+  int v_scale = (avail_h > 0) ? avail_h / units : 0;
+
+  const bool rotated = (h_scale < 1) && (v_scale >= 1);
+  int scale = rotated ? v_scale : h_scale;
+  if (scale < 1) return false;            // cannot render legibly
+  if (scale > 3) scale = 3;               // wider bars gain nothing
 
   graphics_context_set_fill_color(ctx, GColorBlack);
+  const int cx = bounds.size.w / 2;
+  const int total = units * scale;
 
   if (!rotated) {
-    const int total = units * scale;
-    const int bar_h = (area.size.h * 6) / 10;
-    int x = area.origin.x + (area.size.w - total) / 2;
-    if (x < area.origin.x) x = area.origin.x;
+    int x = cx - total / 2;
     const int y = area.origin.y + (area.size.h - bar_h) / 2;
     for (uint16_t i = 0; i < c->data_len; i++) {
       const int w = c->data[i] * scale;
       if (!(i & 1)) graphics_fill_rect(ctx, GRect(x, y, w, bar_h), 0, GCornerNone);
       x += w;
-      if (x > area.origin.x + area.size.w) break;
     }
   } else {
-    const int total = units * scale;
-    const int bar_w = (area.size.w * 7) / 10;
     int y = area.origin.y + (area.size.h - total) / 2;
-    if (y < area.origin.y) y = area.origin.y;
-    const int x = area.origin.x + (area.size.w - bar_w) / 2;
+    const int x = cx - bar_w / 2;
     for (uint16_t i = 0; i < c->data_len; i++) {
       const int h = c->data[i] * scale;
       if (!(i & 1)) graphics_fill_rect(ctx, GRect(x, y, bar_w, h), 0, GCornerNone);
       y += h;
-      if (y > area.origin.y + area.size.h) break;
     }
   }
+  return true;
 }
 
 static bool qr_module(const Card *c, int row, int col) {
@@ -161,10 +227,15 @@ static void layer_update(Layer *layer, GContext *ctx) {
   // what saves long set-B codes on 144x168 displays.
   bool tall = false;
   if (s_page == 0 && c->type == CARD_TYPE_BARCODE) {
-    const int units  = barcode_units(c);
-    const int std_w  = (bounds.size.w - 10 - 4) - 12;             // code area - pads
-    const int std_h  = (bounds.size.h - hh - 20 - 10) - 12;
-    if (units > std_w && units > std_h) { tall = true; hh = 16; }
+    const int units = barcode_units(c);
+    // Would the code fit in the normal layout (either orientation)?
+    const GRect std = fit_round(bounds,
+        GRect(2, hh + 4, bounds.size.w - 14, bounds.size.h - hh - 30));
+    int bar_h = (std.size.h * 6) / 10;
+    if (bar_h > 72) bar_h = 72;
+    const int fits_w = max_code_w(bounds, std, bar_h) - 12;
+    const int fits_h = std.size.h - 12;
+    if (units > fits_w && units > fits_h) { tall = true; hh = 16; }
   }
 
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -174,17 +245,28 @@ static void layer_update(Layer *layer, GContext *ctx) {
   const GRect body = GRect(0, hh, bounds.size.w - 10, bounds.size.h - hh);
 
   if (s_page == 0 && tall) {
-    const GRect code_area = GRect(2, hh + 2, bounds.size.w - 14,
-                                  bounds.size.h - hh - 4);
-    draw_barcode(ctx, c, code_area);
+    const GRect code_area = fit_round(bounds,
+        GRect(2, hh + 2, bounds.size.w - 14, bounds.size.h - hh - 4));
+    draw_barcode(ctx, c, code_area, bounds);
   } else if (s_page == 0) {
     const int text_h = 20;
-    const GRect code_area = GRect(body.origin.x + 2, body.origin.y + 4,
-                                  body.size.w - 4, body.size.h - text_h - 10);
-    if (c->type == CARD_TYPE_QR) draw_qr(ctx, c, code_area);
-    else                         draw_barcode(ctx, c, code_area);
+    const GRect code_area = fit_round(bounds,
+        GRect(body.origin.x + 2, body.origin.y + 4,
+              body.size.w - 4, body.size.h - text_h - 10));
+    bool drawn;
+    if (c->type == CARD_TYPE_QR) { draw_qr(ctx, c, code_area); drawn = true; }
+    else                         drawn = draw_barcode(ctx, c, code_area, bounds);
 
     graphics_context_set_text_color(ctx, GColorBlack);
+    if (!drawn) {
+      // Too long for this display — show the number large enough to read
+      // aloud rather than a truncated, mis-scannable barcode.
+      graphics_draw_text(ctx, c->code,
+                         fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+                         GRect(6, code_area.origin.y + code_area.size.h / 2 - 20,
+                               bounds.size.w - 12, 56),
+                         GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    }
     graphics_draw_text(ctx, c->code,
                        fonts_get_system_font(FONT_KEY_GOTHIC_14),
                        GRect(0, bounds.size.h - text_h - 2, body.size.w, text_h),

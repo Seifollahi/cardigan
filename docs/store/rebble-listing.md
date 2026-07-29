@@ -43,9 +43,34 @@ Ready to upload — exact sizes the portal requires, in `docs/store/assets/`:
 | Appstore banner | 720×320 PNG | `assets/banner_720x320.png` |
 | Large icon | 144×144 PNG | `assets/icon_large_144.png` |
 | Small icon | 48×48 PNG | `assets/icon_small_48.png` |
-| Screenshots | native per platform: 144×168 (aplite/basalt/diorite), 180×180 (chalk), 200×228 (emery) | `pebble screenshot` against each emulator |
 
 Regenerate any of them with `python3 docs/store/make_assets.py` (requires Pillow).
+
+## Screenshots
+
+The portal takes up to 5 per platform, at native resolution:
+
+| Platform | Watch | Size |
+|---|---|---|
+| aplite | Pebble / Pebble Steel | 144×168 |
+| basalt | Pebble Time / Time Steel | 144×168 |
+| diorite | Pebble 2 | 144×168 |
+| flint | Pebble 2 Duo | 144×168 |
+| chalk | Pebble Time Round | 180×180 |
+| emery | Pebble Time 2 | 200×228 |
+| gabbro | Pebble Round 2 | 260×260 |
+
+Capture them all with the guided helper — it installs each emulator in turn
+and prompts you for the button presses between shots:
+
+```sh
+bash docs/store/capture_screenshots.sh            # every platform
+bash docs/store/capture_screenshots.sh emery      # just one
+```
+
+It saves to `docs/store/screenshots/<platform>_<n>_<name>.png` and verifies
+every file is exactly the right size at the end. Five shots per platform:
+quick card, QR card, balance page, card list, action menu.
 
 Screenshot capture, per platform:
 
@@ -63,7 +88,9 @@ The store wants raw native-resolution shots — the framed marketing images in
 
 ## Before submitting
 
-- [ ] Replace `[link]` placeholders with the live store URL once published
 - [ ] `pebble build` with final version number in package.json
-- [ ] Verify chalk in the emulator (round-display clipping) or drop chalk
+- [ ] Confirm the SDK accepts `flint` and `gabbro` in targetPlatforms
+      (drop them if your SDK predates those platforms)
+- [ ] Capture screenshots for every platform you ship
 - [ ] Test sideload of the exact .pbw you upload
+- [ ] Replace `[link]` placeholders in launch-posts.md once the store URL exists

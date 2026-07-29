@@ -10,13 +10,16 @@
 
 // ---------------- display / framebuffer ----------------
 static int s_w = 200, s_h = 228;
-#define FB_MAX (240 * 240)
+#define FB_MAX (320 * 320)          // largest platform is gabbro at 260x260
 static uint8_t s_fb[FB_MAX];
 
 struct GContext { GColor fill; GColor text; };
 static struct GContext s_ctx;
 
-void stub_set_display(int w, int h) { s_w = w; s_h = h; }
+void stub_set_display(int w, int h) {
+  if (w * h > FB_MAX) { fprintf(stderr, "display %dx%d exceeds stub framebuffer\n", w, h); exit(2); }
+  s_w = w; s_h = h;
+}
 
 static uint8_t argb_to_gray(GColor c) {
   const int r = (c.argb >> 4) & 3, g = (c.argb >> 2) & 3, b = c.argb & 3;

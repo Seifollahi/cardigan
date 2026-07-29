@@ -20,14 +20,15 @@ jobs:
       - name: Run real phone pipeline (pkjs under node)
         run: NODE_PATH=test/shims node test/run_pkjs.js
 
-      - name: Build host harness (colour)
+      - name: Build host harness (rectangular + round)
         run: |
-          gcc -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -DPBL_COLOR \
-            -Itest/stub -Isrc/c \
-            test/stub/pebble_stub.c test/harness.c src/c/storage.c src/c/comm.c \
-            src/c/card_window.c src/c/menu_window.c -o test/out/harness
+          SRC="test/stub/pebble_stub.c test/harness.c src/c/storage.c src/c/comm.c \
+               src/c/card_window.c src/c/menu_window.c"
+          FLAGS="-std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -Itest/stub -Isrc/c"
+          gcc $FLAGS -DPBL_COLOR $SRC -o test/out/harness
+          gcc $FLAGS -DPBL_COLOR -DPBL_ROUND $SRC -o test/out/harness_round
 
-      - name: B&W compile check (aplite/diorite path)
+      - name: B&W compile check (aplite/diorite/flint path)
         run: |
           gcc -fsyntax-only -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter \
             -Itest/stub -Isrc/c src/c/*.c
@@ -35,8 +36,16 @@ jobs:
       - name: Logic + render (Pebble Time 2, 200x228)
         run: ./test/out/harness 200 228 test/out/emery_ --logic
 
-      - name: Render (144x168)
+      - name: Render 144x168 (basalt/diorite/flint/aplite)
         run: ./test/out/harness 144 168 test/out/basalt_
 
-      - name: Scanner verification (zxing-cpp)
-        run: python3 test/scan_check.py test/out/emery_ test/out/basalt_
+      - name: Render 180x180 round (chalk)
+        run: ./test/out/harness_round 180 180 test/out/chalk_
+
+      - name: Render 260x260 round (gabbro / Pebble Round 2)
+        run: ./test/out/harness_round 260 260 test/out/gabbro_
+
+      - name: Scanner verification (zxing-cpp, every display geometry)
+        run: |
+          python3 test/scan_check.py test/out/emery_ test/out/basalt_ \
+            test/out/chalk_ test/out/gabbro_

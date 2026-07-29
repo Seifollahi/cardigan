@@ -22,7 +22,17 @@ var MAX_QR_MODULES = 29;     // QR version 3; 29*29 bits = 106 B < 180 B
 
 // Largest barcode (in modules) each display can show at 1 px/module,
 // rotated in the watch's full-height "tall mode" (h - 16 header - pads).
-var BARCODE_BUDGET = { emery: 196, basalt: 136, diorite: 136, chalk: 120, aplite: 136 };
+// Round displays (chalk, gabbro) are limited by the widest chord that
+// still clears the bezel at the barcode's height, not by the diameter.
+var BARCODE_BUDGET = {
+  emery:   196,   // 200x228
+  gabbro:  208,   // 260x260 round (Pebble Round 2)
+  basalt:  136,   // 144x168
+  diorite: 136,   // 144x168 B&W
+  flint:   136,   // 144x168 B&W (Pebble 2 Duo)
+  aplite:  136,   // 144x168 B&W (original Pebble)
+  chalk:   132    // 180x180 round
+};
 
 function barcodeBudget() {
   try {
