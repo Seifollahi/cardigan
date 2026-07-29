@@ -54,21 +54,8 @@ for P in "${PLATFORMS[@]}"; do
 done
 
 echo
-echo "==> Done. Verifying sizes:"
-python3 - <<'PY'
-import glob, os
-try:
-    from PIL import Image
-except ImportError:
-    print("(install Pillow to verify sizes)"); raise SystemExit
-EXPECT = {"aplite":(144,168),"basalt":(144,168),"diorite":(144,168),
-          "flint":(144,168),"chalk":(180,180),"emery":(200,228),
-          "gabbro":(260,260)}
-for p in sorted(glob.glob("docs/store/screenshots/*.png")):
-    plat = os.path.basename(p).split("_")[0]
-    w,h = Image.open(p).size
-    want = EXPECT.get(plat)
-    flag = "ok " if want == (w,h) else "!! "
-    print(f"  {flag}{os.path.basename(p)}  {w}x{h}" +
-          ("" if want == (w,h) else f"  expected {want[0]}x{want[1]}"))
-PY
+echo "==> Converting to JPEG (the format the Rebble portal accepts)"
+python3 docs/store/convert_screenshots.py --store
+
+echo
+echo "Upload the .jpg files from $OUT/ — the .png originals stay as masters."

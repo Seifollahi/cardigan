@@ -71,17 +71,29 @@ The portal takes up to 5 per platform, at native resolution:
 | emery | Pebble Time 2 | 200×228 |
 | gabbro | Pebble Round 2 | 260×260 |
 
-Capture them all with the guided helper — it installs each emulator in turn
-and prompts you for the button presses between shots:
+**Format: the portal accepts JPEG.** Capture them with the guided helper —
+it installs each emulator in turn, prompts you for the button presses
+between shots, then converts everything to JPEG automatically:
 
 ```sh
-bash docs/store/capture_screenshots.sh            # every platform
+make screens                                      # every platform
 bash docs/store/capture_screenshots.sh emery      # just one
+make store-shots                                  # re-convert only
 ```
 
-It saves to `docs/store/screenshots/<platform>_<n>_<name>.png` and verifies
-every file is exactly the right size at the end. Five shots per platform:
-quick card, QR card, balance page, card list, action menu.
+Output lands in `docs/store/screenshots/` as `<platform>_<n>_<name>.jpg`,
+with the PNG originals kept as masters. Five shots per platform: quick card,
+QR card, balance page, card list, action menu.
+
+The converter **refuses to resize**. If a capture isn't its platform's exact
+native resolution it's reported and skipped — re-capture it rather than
+scaling, because an upscaled screenshot looks soft next to everyone else's
+in the store listing.
+
+> The `.pgm` frames in `test/out/` are **not** store screenshots. They come
+> from the host test suite, which doesn't rasterize system fonts, so card
+> names and captions are missing and the framebuffer is greyscale. They
+> exist to prove the barcodes scan, not to sell the app.
 
 Screenshot capture, per platform:
 

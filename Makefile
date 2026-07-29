@@ -18,7 +18,8 @@ APP_SRC   := $(wildcard src/c/*.c) $(wildcard src/c/*.h)
 JS_SRC    := $(wildcard src/pkjs/*.js)
 
 .DEFAULT_GOAL := help
-.PHONY: help test unit lint render scan build run install release assets screens clean deps
+.PHONY: help test unit lint render scan frames build run install release \
+        assets screens store-shots clean deps
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -69,6 +70,9 @@ scan: render ## decode the rendered output with a real scanner library
 	@echo "▸ scanner verification"
 	@python3 test/scan_check.py $(OUT)/emery_ $(OUT)/basalt_ $(OUT)/chalk_ $(OUT)/gabbro_ | tail -1
 
+frames: render ## convert rendered .pgm frames to .png so they can be viewed
+	@python3 docs/store/convert_screenshots.py --frames
+
 # ---------------------------------------------------------------- shipping
 
 build: ## build the .pbw (requires the Pebble SDK)
@@ -89,8 +93,11 @@ release: test ## test, build, tag and publish (make release V=1.1.0)
 assets: ## regenerate store banner and icons
 	python3 docs/make_assets.py
 
-screens: ## guided emulator screenshot capture
+screens: ## guided emulator screenshot capture (produces store JPEGs)
 	bash docs/store/capture_screenshots.sh
+
+store-shots: ## convert captured screenshots to JPEG for the Rebble portal
+	python3 docs/store/convert_screenshots.py --store
 
 clean:
 	rm -rf $(OUT) build
