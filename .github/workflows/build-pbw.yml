@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # SDK 4.5 asks "opt in to analytics? [y/n]" on first run and there is
+      # no TTY in CI, so it dies with EOFError. The tool honours this file.
+      - name: Silence the SDK analytics prompt
+        run: |
+          mkdir -p "$HOME/.pebble-sdk"
+          touch "$HOME/.pebble-sdk/NO_TRACKING"
+
       - name: Restrict to platforms SDK 4.5 knows about
         run: |
           python3 - <<'PY'
