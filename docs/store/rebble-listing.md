@@ -36,12 +36,16 @@
 
 ## Asset checklist
 
-| Asset | Spec | How |
+Ready to upload — exact sizes the portal requires, in `docs/store/assets/`:
+
+| Asset | Spec | File |
 |---|---|---|
-| Large icon | 80×80 PNG | export from `docs/brand/mark.png` (scaled, on cream) |
-| Small icon | 48×48 PNG | same mark, simplified |
-| Banner | 720×320 PNG | crop of `docs/brand/banner.png` composition |
+| Appstore banner | 720×320 PNG | `assets/banner_720x320.png` |
+| Large icon | 144×144 PNG | `assets/icon_large_144.png` |
+| Small icon | 48×48 PNG | `assets/icon_small_48.png` |
 | Screenshots | native per platform: 144×168 (aplite/basalt/diorite), 180×180 (chalk), 200×228 (emery) | `pebble screenshot` against each emulator |
+
+Regenerate any of them with `python3 docs/store/make_assets.py` (requires Pillow).
 
 Screenshot capture, per platform:
 
