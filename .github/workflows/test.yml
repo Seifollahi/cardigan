@@ -14,6 +14,10 @@ concurrency:
 permissions:
   contents: read
 
+# The runner image already ships node, python3 and gcc, which is everything
+# this suite needs. Not calling setup-node/setup-python keeps the workflow
+# off the Node-20 deprecation treadmill and removes two moving parts —
+# Dependabot bumps the two actions that remain.
 jobs:
   test:
     name: host suite (no SDK required)
@@ -21,25 +25,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
+      - name: Toolchain versions
+        run: |
+          node --version
+          python3 --version
+          gcc --version | head -1
+          make --version | head -1
 
       - name: Install scanner dependencies
-        run: pip install -r requirements-dev.txt
+        run: |
+          pip install -r requirements-dev.txt \
+            || pip install --break-system-packages -r requirements-dev.txt
 
-      # Runs unit tests (Code 128 round trip, QR packing), lints every JS
-      # and C configuration, renders all four display geometries through
-      # the real watchapp code, then decodes the output with zxing-cpp.
+      # Unit tests (Code 128 round trip, QR packing), lint of every JS file
+      # and all three C configurations, rendering of all four display
+      # geometries through the real watchapp code, then zxing-cpp decodes
+      # those frames — a barcode a scanner couldn't read fails the build.
       - name: make test
         run: make test
 
-      # Rendered frames are the ground truth for any UI change — attaching
+      # Rendered frames are the ground truth for any UI change: attaching
       # them lets a reviewer see exactly what a PR did to the screen.
       - name: Upload rendered frames
         if: always()
@@ -59,15 +64,14 @@ jobs:
       - name: Version, changelog and platform list agree
         run: |
           python3 - <<'PY'
-          import json, re, sys
+          import json, os, re, sys
 
           pkg = json.load(open("package.json"))
           version = pkg["version"]
           platforms = pkg["pebble"]["targetPlatforms"]
           problems = []
 
-          changelog = open("CHANGELOG.md").read()
-          if f"## {version}" not in changelog:
+          if f"## {version}" not in open("CHANGELOG.md").read():
               problems.append(f"CHANGELOG.md has no section for version {version}")
 
           # every platform we ship must have a barcode budget on the phone
@@ -77,18 +81,17 @@ jobs:
               if p not in budget:
                   problems.append(f"{p} is in targetPlatforms but has no BARCODE_BUDGET entry")
 
-          # the menu icon must exist and be declared
+          # the launcher icon must be declared and actually present
           media = pkg["pebble"]["resources"]["media"]
           if not any(m.get("menuIcon") for m in media):
               problems.append("no menuIcon declared in package.json resources")
-          import os
           for m in media:
               path = os.path.join("resources", m["file"])
               if not os.path.exists(path):
                   problems.append(f"missing resource file {path}")
 
           if problems:
-              print("\n".join("✗ " + p for p in problems))
+              print("\n".join("x " + p for p in problems))
               sys.exit(1)
-          print(f"✓ v{version}, {len(platforms)} platforms, resources present")
+          print(f"OK v{version}, {len(platforms)} platforms, resources present")
           PY
