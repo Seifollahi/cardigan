@@ -79,7 +79,6 @@ bool storage_stage_card(uint8_t index, const Card *card) {
 
 void storage_commit_sync(uint8_t total) {
   if (total > MAX_CARDS) total = MAX_CARDS;
-  if (total > s_staged)  total = s_staged;
   for (uint32_t i = total; i < MAX_CARDS; i++) persist_delete(PKEY_CARD_BASE + i);
   persist_write_int(PKEY_COUNT, total);
   load_all();

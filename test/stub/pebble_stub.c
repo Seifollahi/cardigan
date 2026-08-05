@@ -285,4 +285,21 @@ void mock_dict_free(DictionaryIterator *it) {
 // ---------------- misc ----------------
 void vibes_short_pulse(void) {}
 void light_enable_interaction(void) {}
+void light_enable(bool enable) { (void)enable; }
 void app_event_loop(void) {}
+
+struct AppTimer {};
+static struct AppTimer s_dummy_timer;
+AppTimer *app_timer_register(uint32_t timeout_ms, AppTimerCallback callback, void *callback_data) {
+  (void)timeout_ms; (void)callback; (void)callback_data;
+  return &s_dummy_timer;
+}
+bool app_timer_cancel(AppTimer *timer) { (void)timer; return true; }
+
+void accel_tap_service_subscribe(AccelTapHandler handler) { (void)handler; }
+void accel_tap_service_unsubscribe(void) {}
+
+void graphics_context_set_stroke_color(GContext* c, GColor color) { (void)c; (void)color; }
+void graphics_context_set_stroke_width(GContext* c, uint8_t w) { (void)c; (void)w; }
+void graphics_draw_circle(GContext* c, GPoint p, uint16_t r) { (void)c; (void)p; (void)r; }
+void graphics_draw_line(GContext* c, GPoint p1, GPoint p2) { (void)c; (void)p1; (void)p2; }

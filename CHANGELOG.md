@@ -3,6 +3,15 @@
 All notable changes to Cardigan. This project follows
 [semantic versioning](https://semver.org).
 
+## 1.1.0 — 2026-08-04
+
+### Features
+
+- **Till-Mode Backlight**: Barcodes no longer dim mid-scan! The backlight stays on for 30 seconds while a card is open. Need more time? Just flick your wrist to extend it.
+- **Delta Sync**: Updating your cards on the phone is now lightning fast. Cardigan only syncs what changed, saving your watch's battery and flash memory.
+- **True Pebble Palette**: The settings page now features a custom 64-color picker, guaranteeing the color you choose on your phone matches what you see on your wrist.
+- **Accessibility Hint**: Added a clear explanation when a barcode is too long to display on your specific watch geometry.
+
 ## 1.0.0 — 2026-07-29
 
 First public release.

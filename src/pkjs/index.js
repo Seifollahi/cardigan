@@ -146,30 +146,46 @@ function buildCardMessage(card, index) {
 
 var syncing = false;
 
-// force=false skips the sync when the card set hasn't changed since the
-// last successful push: avoids rewriting the watch's persist flash and
-// buzzing the wrist every time the phone app restarts.
 function syncAll(force) {
   if (syncing) return;
   var cards = loadCards().slice(0, MAX_CARDS);
-  var sig = JSON.stringify(cards.map(function (c) {
+  var sigArray = cards.map(function (c) {
     return [c.name, c.code, c.type, c.color, !!c.fav, c.points | 0];
-  }));
+  });
+  var sig = JSON.stringify(sigArray);
+  
   if (!force && localStorage.getItem('synced_sig') === sig) {
     console.log('Cardigan: cards unchanged, skipping sync');
     return;
   }
+  
+  var oldSigArray = [];
+  try {
+    var parsed = JSON.parse(localStorage.getItem('synced_sig'));
+    if (parsed && typeof parsed[0] === 'object') {
+      oldSigArray = parsed;
+    } else if (!force) {
+      force = true; // force full sync if migration needed
+    }
+  } catch(e) { force = true; }
+
   var queue = [];
   var msgs  = [];
 
   for (var i = 0; i < cards.length; i++) {
-    var m = buildCardMessage(cards[i], msgs.length);
-    if (m) msgs.push(m);
+    var changed = force || (i >= oldSigArray.length) || (JSON.stringify(sigArray[i]) !== JSON.stringify(oldSigArray[i]));
+    if (changed) {
+      var m = buildCardMessage(cards[i], msgs.length); // wait, msgs.length? No, index should be i
+      if (m) {
+        m[keys.INDEX] = i; // Ensure index is the absolute slot index, not the delta queue index
+        msgs.push(m);
+      }
+    }
   }
 
   var begin = {};
   begin[keys.OP] = OP_SYNC_BEGIN;
-  begin[keys.TOTAL] = msgs.length;
+  begin[keys.TOTAL] = cards.length; // Tell watch the total active slots
   queue.push(begin);
   queue = queue.concat(msgs);
   var end = {};
@@ -183,7 +199,7 @@ function syncAll(force) {
     if (at >= queue.length) {
       syncing = false;
       localStorage.setItem('synced_sig', sig);
-      console.log('Cardigan: sync complete');
+      console.log('Cardigan: sync complete (' + msgs.length + ' cards updated)');
       return;
     }
     Pebble.sendAppMessage(queue[at],

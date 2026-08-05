@@ -38,8 +38,7 @@ var PAGE = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
 '<div class="savebar"><button class="save" onclick="save()">Save &amp; sync to watch</button>' +
 '<div class="limit" id="limit"></div></div>' +
 '<script>' +
-'var PAL=["#00AA55","#0055AA","#AA0055","#FF5500","#5500AA","#00AAAA","#AA5500","#AA0000",' +
-'"#55AA00","#0000AA","#AA00AA","#005555","#FF0055","#555555","#000000","#FFAA00"];' +
+'var C=["00","55","aa","ff"];var PAL=[];for(var r=0;r<4;r++)for(var g=0;g<4;g++)for(var b=0;b<4;b++)PAL.push("#"+C[r]+C[g]+C[b]);' +
 'var MAX=12;var cards=[];var open=-1;' +
 'try{cards=JSON.parse(decodeURIComponent(location.hash.slice(1)))||[]}catch(e){cards=[]}' +
 'function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}' +

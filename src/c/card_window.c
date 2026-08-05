@@ -19,6 +19,34 @@ static ActionMenuLevel *s_menu_root;
 
 static int header_h(GRect b) { return b.size.h >= 200 ? 40 : 34; }
 
+static AppTimer *s_light_timer;
+
+static void light_timer_cb(void *data) {
+  light_enable(false);
+  s_light_timer = NULL;
+  if (s_layer) layer_mark_dirty(s_layer);
+}
+
+static void set_till_mode(bool enable) {
+  if (s_light_timer) {
+    app_timer_cancel(s_light_timer);
+    s_light_timer = NULL;
+  }
+  if (enable && s_page == 0) {
+    light_enable(true);
+    s_light_timer = app_timer_register(30000, light_timer_cb, NULL);
+  } else {
+    light_enable(false);
+  }
+}
+
+static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+  if (s_page == 0) {
+    set_till_mode(true);
+    if (s_layer) layer_mark_dirty(s_layer);
+  }
+}
+
 #if defined(PBL_ROUND)
 // Integer square root (no FPU on Pebble; avoids linking libm).
 static int isqrt_i(int n) {
@@ -193,6 +221,17 @@ static void draw_header(GContext *ctx, const Card *c, GRect bounds, int hh) {
     graphics_context_set_fill_color(ctx, fg);
     graphics_fill_circle(ctx, GPoint(bounds.size.w - 14, hh / 2), 4);
   }
+  if (s_light_timer && s_page == 0) {
+    int sx = bounds.size.w - 14;
+    if (c->flags & CARD_FLAG_FAV) sx -= 12;
+    graphics_context_set_stroke_color(ctx, fg);
+    graphics_context_set_stroke_width(ctx, 1);
+    graphics_draw_circle(ctx, GPoint(sx, hh / 2), 3);
+    graphics_draw_line(ctx, GPoint(sx, hh/2 - 5), GPoint(sx, hh/2 - 4));
+    graphics_draw_line(ctx, GPoint(sx, hh/2 + 5), GPoint(sx, hh/2 + 4));
+    graphics_draw_line(ctx, GPoint(sx - 5, hh/2), GPoint(sx - 4, hh/2));
+    graphics_draw_line(ctx, GPoint(sx + 5, hh/2), GPoint(sx + 4, hh/2));
+  }
   if (s_quick) {
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_fill_rect(ctx, GRect(0, hh, 58, 13), 0, GCornerNone);
@@ -266,6 +305,11 @@ static void layer_update(Layer *layer, GContext *ctx) {
                          GRect(6, code_area.origin.y + code_area.size.h / 2 - 20,
                                bounds.size.w - 12, 56),
                          GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+      graphics_draw_text(ctx, "Code too long for display",
+                         fonts_get_system_font(FONT_KEY_GOTHIC_14),
+                         GRect(0, code_area.origin.y + code_area.size.h / 2 + 10,
+                               bounds.size.w, 16),
+                         GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     }
     graphics_draw_text(ctx, c->code,
                        fonts_get_system_font(FONT_KEY_GOTHIC_14),
@@ -350,7 +394,7 @@ static void open_action_menu(void) {
 
 static void flip_page(void) {
   s_page = 1 - s_page;
-  light_enable_interaction();
+  set_till_mode(s_page == 0);
   layer_mark_dirty(s_layer);
 }
 
@@ -371,7 +415,7 @@ static void cycle_fav(int dir) {
   s_page = 0;
   storage_set_last_used((int8_t)s_index);
   comm_notify_used(s_index);
-  light_enable_interaction();
+  set_till_mode(true);
   layer_mark_dirty(s_layer);
 }
 
@@ -394,10 +438,13 @@ static void window_load(Window *window) {
   s_layer = layer_create(layer_get_bounds(root));
   layer_set_update_proc(s_layer, layer_update);
   layer_add_child(root, s_layer);
-  light_enable_interaction();     // brief backlight for the till
+  accel_tap_service_subscribe(accel_tap_handler);
+  set_till_mode(true);
 }
 
 static void window_unload(Window *window) {
+  set_till_mode(false);
+  accel_tap_service_unsubscribe();
   layer_destroy(s_layer);
   window_destroy(s_window);
   s_window = NULL;

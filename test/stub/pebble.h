@@ -59,6 +59,10 @@ void graphics_context_set_fill_color(GContext*, GColor);
 void graphics_context_set_text_color(GContext*, GColor);
 void graphics_fill_rect(GContext*, GRect, uint16_t, GCornerMask);
 void graphics_fill_circle(GContext*, GPoint, uint16_t);
+void graphics_context_set_stroke_color(GContext*, GColor);
+void graphics_context_set_stroke_width(GContext*, uint8_t);
+void graphics_draw_circle(GContext*, GPoint, uint16_t);
+void graphics_draw_line(GContext*, GPoint, GPoint);
 typedef struct GTextAttributes GTextAttributes;
 void graphics_draw_text(GContext*, const char*, GFont, const GRect,
                         GTextOverflowMode, GTextAlignment, GTextAttributes*);
@@ -167,4 +171,16 @@ static const uint32_t MESSAGE_KEY_OP=10000, MESSAGE_KEY_INDEX=10001,
 #define APP_LOG(level, fmt, ...) ((void)printf(fmt "\n", ##__VA_ARGS__))
 void vibes_short_pulse(void);
 void light_enable_interaction(void);
+void light_enable(bool enable);
 void app_event_loop(void);
+
+typedef struct AppTimer AppTimer;
+typedef void (*AppTimerCallback)(void*);
+AppTimer *app_timer_register(uint32_t timeout_ms, AppTimerCallback callback, void *callback_data);
+bool app_timer_cancel(AppTimer *timer);
+
+typedef enum { ACCEL_AXIS_X, ACCEL_AXIS_Y, ACCEL_AXIS_Z } AccelAxisType;
+typedef void (*AccelTapHandler)(AccelAxisType axis, int32_t direction);
+void accel_tap_service_subscribe(AccelTapHandler handler);
+void accel_tap_service_unsubscribe(void);
+
