@@ -44,21 +44,6 @@ jobs:
       - name: make test
         run: make test
 
-      # Rendered frames are the ground truth for any UI change: attaching
-      # them lets a reviewer see exactly what a PR did to the screen.
-      # Converted to PNG because neither GitHub nor a browser previews PGM.
-      - name: Convert frames for review
-        if: always()
-        run: python3 docs/store/convert_screenshots.py --frames || true
-
-      - name: Upload rendered frames
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rendered-frames
-          path: test/out/png/*.png
-          retention-days: 14
-          if-no-files-found: warn
 
   consistency:
     name: metadata consistency
